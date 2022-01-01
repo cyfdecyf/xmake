@@ -99,8 +99,11 @@ function _get_cflags_from_make(target, sdkdir)
         local make = assert(find_tool("make"), "make not found!")
         local tmpdir = os.tmpfile() .. ".dir"
         local makefile = path.join(tmpdir, "Makefile")
-        local stubfile = path.join(tmpdir, "stub.c")
-        io.writefile(makefile, "obj-m := stub.o")
+        local stubfile = path.join(tmpdir, "src/stub.c")
+        local foofile  = path.join(tmpdir, "src/foo.c")
+        io.writefile(makefile, [[obj-m := stub.o
+stub-objs := src/stub.o src/foo.o]])
+        io.writefile(foofile, "")
         io.writefile(stubfile, [[
 #include <linux/init.h>
 #include <linux/module.h>
@@ -192,6 +195,7 @@ module_exit(hello_exit);
         os.tryrm(tmpdir)
         memcache.set2("linux.driver", key, "cflags", cflags or false)
     end
+    print("ldflags_o", ldflags_o)
     print("ldflags_ko", ldflags_ko)
     return cflags or nil, ldflags_o or nil, ldflags_ko or nil
 end
@@ -333,11 +337,13 @@ function link(target, opt)
         -- link target.ko
         argv = {}
         local ldflags_ko = target:data("linux.driver.ldflags_ko")
+        print("get ldflags_ko", ldflags_ko)
         if ldflags_ko then
             table.join2(argv, ldflags_ko)
         end
         local targetfile_o = target:objectfile(targetfile)
         table.join2(argv, "-o", targetfile, targetfile_o, targetfile_mod_o)
+        print(argv)
         os.mkdir(path.directory(targetfile))
         os.vrunv(ld, argv)
 
