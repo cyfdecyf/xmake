@@ -144,6 +144,7 @@ module_exit(hello_exit);
         local result, errors = try {function () return os.iorunv(make.program, argv, {curdir = tmpdir}) end}
         if result then
             for _, line in ipairs(result:split("\n", {plain = true})) do
+                print("line: ", line)
                 if line:endswith("stub.c") then
                     for _, cflag in ipairs(line:split("%s+")) do
                         if cflag:startswith("-f") or cflag:startswith("-m")
@@ -155,15 +156,19 @@ module_exit(hello_exit);
                     end
                 end
                 local ldflags = line:match("%-ld (.+) %-o ") or line:match("ld (.+) %-o ")
+                print("ldflags: ", ldflags)
                 if ldflags then
                     local ko = ldflags:find("-T ", 1, true)
+                print("ko: ", ko)
                     for _, ldflag in ipairs(os.argv(ldflags)) do
+                print(" > ldflag: ", ldflag)
                         if ldflag:endswith(".lds") then
                             if not path.is_absolute(ldflag) then
                                 ldflag = path.absolute(ldflag, sdkdir)
                             end
                         end
                         if ko then
+                print(" > ldflag ko: ", ldflag)
                             -- e.g. aarch64-linux-gnu-ld -r -EL  -maarch64elf --build-id=sha1  -T scripts/module.lds -o hello.ko hello.o hello.mod.o
                             ldflags_ko = ldflags_ko or {}
                             table.insert(ldflags_ko, ldflag)
@@ -187,6 +192,7 @@ module_exit(hello_exit);
         os.tryrm(tmpdir)
         memcache.set2("linux.driver", key, "cflags", cflags or false)
     end
+    print("ldflags_ko", ldflags_ko)
     return cflags or nil, ldflags_o or nil, ldflags_ko or nil
 end
 
