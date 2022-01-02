@@ -144,12 +144,16 @@ module_exit(hello_exit);
             table.insert(argv, "ARCH=" .. arch)
             table.insert(argv, "CROSS_COMPILE=" .. cross)
         end
+        print(argv)
         local result, errors = try {function () return os.iorunv(make.program, argv, {curdir = tmpdir}) end}
+        print("result", result)
+        print("errors", errors)
         if result then
             for _, line in ipairs(result:split("\n", {plain = true})) do
                 print("line: ", line)
                 if line:endswith("stub.c") then
                     for _, cflag in ipairs(line:split("%s+")) do
+                        print("cflag", cflag)
                         if cflag:startswith("-f") or cflag:startswith("-m")
                         or (cflag:startswith("-W") and not cflag:startswith("-Wp,-MMD,") and not cflag:startswith("-Wp,-MD,"))
                         or (cflag:startswith("-D") and not cflag:startswith("-DKBUILD_")) then
@@ -192,7 +196,7 @@ module_exit(hello_exit);
                 print(errors)
             end
         end
-        os.tryrm(tmpdir)
+        --os.tryrm(tmpdir)
         memcache.set2("linux.driver", key, "cflags", cflags or false)
     end
     print("ldflags_o", ldflags_o)
